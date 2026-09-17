@@ -8,7 +8,7 @@ DATA_PROCESSED = ROOT / "data" / "processed"
 
 TRAIN_FILE = DATA_RAW / "train.parquet"
 BENCHMARK_Q_FILE = DATA_RAW / "benchmark_queries.parquet"
-BENCHMARK_FILE = DATA_RAW / "benchmark_items.parquet"
+BENCHMARK_I_FILE = DATA_RAW / "benchmark_items.parquet"
 
 SEED = 67
 
