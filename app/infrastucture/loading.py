@@ -51,10 +51,13 @@ def load_train(path) -> pd.DataFrame:
     return train
 
 if __name__ == "__main__":
+    print(">> Загрузка items")
     items = load_bench_items(BENCHMARK_I_FILE)
+    print(">> Загрузка queries")
     queries = load_bench_queries(BENCHMARK_Q_FILE)
+    print(">> Загрузка train")
     train = load_train(TRAIN_FILE)
 
     print(items.shape, queries.shape, train.shape)
     print(items[["item_id", "item_text"]].head(2))
-    print(queries[["quid", "normed_search_query"]].head(2))
+    print(queries[["qid", "normed_search_query"]].head(2))

@@ -13,8 +13,8 @@ BENCHMARK_I_FILE = DATA_RAW / "benchmark_items.parquet"
 SEED = 67
 
 # Поля search
-# normed_query_search — нормализованный текст запроса (создаётся при загрузке).
-SEARCH_COLS = ['normed_query_search', 'search_location_id',
+# normed_search_query — нормализованный текст запроса (создаётся при загрузке).
+SEARCH_COLS = ['normed_search_query', 'search_location_id',
                'search_is_delivery_search',
                'search_infm_params_text', 'search_category']
 # Колонки-идентификаторы, для которых нужно превращение в строки
