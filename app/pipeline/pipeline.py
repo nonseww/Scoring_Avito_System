@@ -17,6 +17,6 @@ class Pipeline:
 
         item_ids = items["item_id"].tolist()
         item_texts = items["item_text"].tolist()
-        items_embeddings = self.embeddings_service.embed_batch(item_texts, prefix="passage: ")
+        items_embeddings = self.embeddings_service.embed_batch(item_texts, prefix="passage: ", batch_size=128)
         self.embeddings_service.save(items_embeddings, item_ids, ITEMS_EMBEDDINGS_FILE)
 
