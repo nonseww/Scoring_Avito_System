@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import joblib
 import numpy as np
 import pandas as pd
@@ -50,8 +49,13 @@ class MicrocatGeneratorService:
         top_idx = np.argsort(proba, axis=1)[:, -self.top_k_classes:][:, ::-1]
         return self.classifier.classes_[top_idx]
 
-    def generate(self, query_text: str, pool: list, top_k: int = 200):
-        microcats = self.predict_microcats([query_text])[0]
+    def generate(self, query_text: str, pool: list, top_k: int = 200, microcats=None):
+        """если передам microcats, модель не вызывается повторно. Нужно для
+        пакетного прогона"""
+
+        if microcats is None:
+            microcats = self.predict_microcats([query_text])[0]
+
         candidate_ids = set()
         for cat in microcats:
             candidate_ids.update(self.items_by_microcat.get(cat, []))
