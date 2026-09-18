@@ -11,6 +11,7 @@ BENCHMARK_Q_FILE = DATA_RAW / "benchmark_queries.parquet"
 BENCHMARK_I_FILE = DATA_RAW / "benchmark_items.parquet"
 
 ITEMS_EMBEDDINGS_FILE = DATA_PROCESSED / "items_embeddings.npz"
+MICROCAT_MODEL_FILE = ROOT / "models" / "microcat_classifier.joblib"
 
 SEED = 67
 
