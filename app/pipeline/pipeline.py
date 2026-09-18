@@ -1,4 +1,8 @@
 import time
+
+from pip._internal.models import candidate
+
+from app.domain.services.bm25_generator_service import BM25GeneratorService
 from app.domain.services.embeddings_service import EmbeddingsService
 from app.domain.services.evaluation_service import EvaluationService
 from app.domain.services.location_filter_service import LocationFilterService
@@ -25,6 +29,7 @@ class Pipeline:
         self.location_service = None
         self.popularity_service = None
         self.microcat_service = None
+        self.bm25_service = None
 
     def process(self):
         print(">> Загрузка items")
@@ -44,53 +49,61 @@ class Pipeline:
         print(">> Фильтры по локации и рейтингу")
         self.location_service = LocationFilterService(items, train)
         self.popularity_service = PopularityGeneratorService(items)
-        self.microcat_service = MicrocatGeneratorService.load(MICROCAT_MODEL_FILE, popularity_service=self.popularity_service)
+        self.microcat_service = MicrocatGeneratorService.load(
+            MICROCAT_MODEL_FILE,
+            popularity_service=self.popularity_service,
+            top_k_classes=20
+        )
+        self.bm25_service = BM25GeneratorService(popularity_service=self.popularity_service).fit(items)
 
         print(">> Предсказание подкатегорий для всех запросов сразу")
         all_microcats = self.microcat_service.predict_microcats(
             val_queries["normed_search_query"].tolist()
         )
 
+        # Пулы считаются один раз: локация + сужение по топ-5 подкатегориям.
+        # Дальше их переиспользуют baseline, BM25 и в будущем dense/RRF —
+        # так все источники честно сравниваются на одинаковых кандидатах.
         print(">> Прогон по val-запросам")
         t0 = time.time()
-        predictions = {}
+        microcat_predictions = {}
+        bm25_wide_predictions = {} # bm25 по пулу локации
+        bm25_narrow_predictions = {} # bm25 внутри суженного пула
+        candidates_no_cutoff = {}
+        sizes = []
         for i, row in enumerate(val_queries.itertuples()):
-            pool = self.location_service.get_pool(
+            location_pool = self.location_service.get_pool(
                 row.search_location_id,
                 is_delivery=(row.search_is_delivery_search == 1)
             )
-            predictions[row.qid] = self.microcat_service.generate(
-                row.normed_search_query, pool, top_k=50, microcats=all_microcats[i]
-            )
+            # сужение по подкатегориям
+            candidate_ids = set()
+            for cat in all_microcats[i]:
+                candidate_ids.update(self.microcat_service.items_by_microcat.get(cat, []))
+
+            narrow_pool = [x for x in location_pool if x in candidate_ids]
+            sizes.append(len(narrow_pool))
+            candidates_no_cutoff[row.qid] = narrow_pool
+
+            microcat_predictions[row.qid] = self.popularity_service.generate_popularity_ranking(narrow_pool, top_k=50)
+            bm25_wide_predictions[row.qid] = self.bm25_service.generate(row.normed_search_query, location_pool, top_k=50)
+            bm25_narrow_predictions[row.qid] = self.bm25_service.generate(row.normed_search_query, narrow_pool, top_k=50)
+
         print(f"time = {time.time() - t0:.0f} секунд")
 
-        print(">> Оценка")
         gold_dict = dict(zip(val_gold["qid"], val_gold["item_ids"]))
-        recall = self.evaluation_service.recall(predictions, gold_dict)
-        print(f"Baseline Recall@50: {recall:.4f}")
+
+        print(f"Потолок (суженный пул): {recall_no_cutoff(candidates_no_cutoff, gold_dict):.4f}")
+        print(f"Подкатегории + популярность: {self.evaluation_service.recall(microcat_predictions, gold_dict):.4f}")
+        print(f"BM25 по пулу локации: {self.evaluation_service.recall(bm25_wide_predictions, gold_dict):.4f}")
+        print(
+            f"BM25 внутри подкатегорий: {self.evaluation_service.recall(bm25_narrow_predictions, gold_dict):.4f}")
+        print(f"медиана суженного пула: {np.median(sizes):.0f}, <=50 кандидатов: {np.mean(np.array(sizes) <= 50):.1%}")
+
+
         # Построение эмбеддингов
         # item_ids = items["item_id"].tolist()
         # item_texts = items["item_text"].tolist()
         # items_embeddings = self.embeddings_service.embed_batch(item_texts, prefix="passage: ", batch_size=128)
         # self.embeddings_service.save(items_embeddings, item_ids, ITEMS_EMBEDDINGS_FILE)
 
-        print(">> Проверка покрытия пула")
-        sizes = []
-        candidates_no_cutoff = {}
-        for i, row in enumerate(val_queries.itertuples()):
-            pool = self.location_service.get_pool(
-                row.search_location_id,
-                is_delivery=(row.search_is_delivery_search == 1)
-            )
-            candidate_ids = set()
-            for cat in all_microcats[i]:
-                candidate_ids.update(self.microcat_service.items_by_microcat.get(cat, []))
-            pool_after_microcat = [x for x in pool if x in candidate_ids]
-            sizes.append(len(pool_after_microcat))
-            candidates_no_cutoff[row.qid] = pool_after_microcat
-
-        print(f"после сужения по подкатегориям: медиана {np.median(sizes):.0f}, среднее {np.mean(sizes):.0f}")
-        print(f"запросов, где осталось <=50 кандидатов: {np.mean(np.array(sizes) <= 50):.1%}")
-
-        ceiling_recall = recall_no_cutoff(candidates_no_cutoff, gold_dict)
-        print(f"Потолок Recall (без обрезки до 50) после сужения по подкатегориям: {ceiling_recall:.4f}")

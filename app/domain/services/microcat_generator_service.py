@@ -77,10 +77,10 @@ class MicrocatGeneratorService:
         )
 
     @classmethod
-    def load(cls, path: Path, popularity_service: PopularityGeneratorService):
+    def load(cls, path: Path, popularity_service: PopularityGeneratorService, top_k_classes: int = 5):
         """Загружает ранее обученную модель"""
         data = joblib.load(path)
-        service = cls(popularity_service, top_k_classes=data["top_k_classes"])
+        service = cls(popularity_service, top_k_classes=top_k_classes)
         service.vectorizer = data["vectorizer"]
         service.classifier = data["classifier"]
         service.items_by_microcat = data["items_by_microcat"]
