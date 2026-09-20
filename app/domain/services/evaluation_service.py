@@ -3,6 +3,7 @@ import csv
 
 
 class EvaluationService:
+    """Сервис, считающий итоговый Recall@50"""
     def recall(self, predictions: dict, gold: dict) -> float:
         query_recalls = []
         for qid, relevant in gold.items():
@@ -12,6 +13,7 @@ class EvaluationService:
         return sum(query_recalls) / len(query_recalls)
 
     def save_answer(self, predictions: dict, path: Path) -> None:
+        """Сохранение ответа с кандидатами в файл"""
         with open(path, "w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["query_id", "answer"])

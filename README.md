@@ -1,3 +1,90 @@
+# Scoring Avito System
+
+## Задача и результат
+
+Поставленная задача требовала создать Avito-подобную систему, выдающую ТОП-50 самых релевантных объявлений для каждого запроса пользователя (поиск услуги). Ранжирование выполнять не требовалось. 
+
+### Исходные данные:
+
+- Размеченные **train** данные, содержащие запрос пользователя и объявление, которое он выбрал: 497 673
+- Корпус объявлений, по которому будет строиться итоговый ответ: 189 212
+- Запросы пользователей, для которых следует предсказать 50 самых релевантных объявлений: 2452
+
+#### `train`
+
+| Колонка | Тип |
+|---|---|
+| search_query | string |
+| search_location_id | int64 |
+| search_is_delivery_search | int32 |
+| search_infm_params_text | string |
+| search_category | int64 |
+| item_title_raw | string |
+| item_rating_reviews_count | double |
+| item_rating | double |
+| item_price | decimal128(27, 15) |
+| item_microcat_id | int64 |
+| item_longitude | decimal128(18, 15) |
+| item_location_id | int64 |
+| item_latitude | decimal128(17, 15) |
+| item_is_phone_hidden | bool |
+| item_is_message_forbidden | bool |
+| item_infm_params_text | string |
+| item_id | string |
+| item_description_raw | string |
+| item_category_id | int64 |
+
+#### `benchmark_queries`
+
+| Колонка | Тип |
+|---|---|
+| query_id | large_string |
+| search_query | large_string |
+| search_location_id | int64 |
+| search_is_delivery_search | int32 |
+| search_infm_params_text | large_string |
+| search_category | int64 |
+
+#### `benchmark_items`
+
+| Колонка | Тип |
+|---|---|
+| item_title_raw | string |
+| item_rating_reviews_count | double |
+| item_rating | double |
+| item_price | decimal128(27, 15) |
+| item_microcat_id | int64 |
+| item_longitude | decimal128(18, 15) |
+| item_location_id | int64 |
+| item_latitude | decimal128(17, 15) |
+| item_is_phone_hidden | bool |
+| item_is_message_forbidden | bool |
+| item_infm_params_text | string |
+| item_id | string |
+| item_description_raw | string |
+| item_category_id | int64 |
+
+### Метрика
+
+Для проверки ответа была использована метрика **Recall@50**.
+
+## #Результат
+
+- На локальном **validation set** была получена **Recall@50 = 0.8466**
+- На итоговых данных (независимая проверка от Avito) была достигнута **Recall@50 = 0.81**
+
+## Как запустить
+
+...
+
+## Архитектура решения
+
+
+
+
+
+
+
 # EDA: выводы по датасету
 
 ## Общая структура данных

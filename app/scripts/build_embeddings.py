@@ -1,6 +1,3 @@
-"""Кодирует объединение объявлений двумя моделями.
-Запускается на арендованной GPU-машине.
-"""
 import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -14,6 +11,7 @@ ids = df["item_id"].to_numpy()
 
 
 def encode_and_save(model_name, doc_prefix, out_path, batch_size, dtype):
+    """Кодирует объединение объявлений двумя моделями"""
     print(f"\n>> {model_name}")
     model = SentenceTransformer(model_name, device="cuda")
     print(f"размерность: {model.get_embedding_dimension()}")
