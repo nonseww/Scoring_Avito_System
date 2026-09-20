@@ -2,13 +2,13 @@ from collections import defaultdict
 
 
 class RRFService:
-    """Алгоритм переранжирования списков"""
+    """Алгоритм переранжирования списков - RRF"""
     def __init__(self, k: int = 60):
         self.k = k
 
     def run_with_scores(self, ranked_lists: dict, weights: dict = None, top_k: int | None = 50) -> tuple:
         """Возвращает (упорядоченный список, {item_id: слитый скор}).
-        top_k=None — вернуть всех кандидатов (нужно для признаков реранкера)."""
+        top_k=None — вернуть всех кандидатов (нужно для признаков реранкера)"""
         if weights is None:
             weights = {name: 1.0 for name in ranked_lists}
 
@@ -26,5 +26,6 @@ class RRFService:
         return [item_id for item_id, _ in ordered], dict(scores)
 
     def run(self, ranked_lists, weights=None, top_k=50) -> list:
+        """Возвращает ответ без score"""
         ids, _ = self.run_with_scores(ranked_lists, weights, top_k)
         return ids

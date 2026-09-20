@@ -1,16 +1,18 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from pathlib import Path
-
+import torch
 from app.infrastucture.config import BENCHMARK_I_FILE
 from app.infrastucture.loading import load_bench_items
 
 
 class EmbeddingsService:
-    def __init__(self, model: str = "intfloat/multilingual-e5-small"):
-        self.model = SentenceTransformer(model, device="cuda")
+    def __init__(self, model: str = "intfloat/multilingual-e5-small", device: str = None):
+        device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = SentenceTransformer(model, device=device)
 
     def embed_batch(self, texts: list[str], prefix: str, batch_size: int = 64) -> np.ndarray:
+        """Построение пула эмбеддингов (так быстрее)"""
         with_prefixes = [f"{prefix}{t}" for t in texts]
         return self.model.encode(
             with_prefixes,
@@ -21,6 +23,7 @@ class EmbeddingsService:
         )
 
     def embed(self, text: str, prefix: str) -> np.ndarray:
+        """Построение одного эмбеддинга"""
         return self.embed_batch([text], prefix=prefix)[0]
 
     def save(self, vectors, ids, path: Path, dtype=None) -> None:

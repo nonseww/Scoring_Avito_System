@@ -18,7 +18,7 @@ E5_UNION_EMBEDDINGS_FILE = DATA_PROCESSED / "e5_union_embeddings.npz"
 FRIDA_EMBEDDINGS_FILE = DATA_PROCESSED / "frida_union_embeddings.npz"
 RERANKER_MODEL_FILE = ROOT / "models" / "catboost_reranker.cbm"
 BM25_INDEX_FILE = DATA_PROCESSED / "bm25_index.joblib"
-
+VAL_HEAD_FEATURES_FILE = DATA_PROCESSED / "val_head_features.pkl"
 SEED = 67
 
 # Поля search

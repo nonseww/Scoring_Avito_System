@@ -49,11 +49,10 @@ def make_eval_set(train: pd.DataFrame, split: str, eligible_only: bool = True):
     queries - одна строка на запрос
     gold - для каждого qid список правильных item_id
 
-    eligible_only=True — только запросы, чьи ответы есть в корпусе бенчмарка
+    eligible_only=True - только запросы, чьи ответы есть в корпусе бенчмарка
     (нужно для честной оценки: недостижимый ответ занижал бы recall).
-    eligible_only=False — все запросы сплита; для обучения реранкера,
-    где кандидаты берутся из объединения и ответ из train достижим.
-    """
+    eligible_only=False - все запросы сплита; для обучения реранкера,
+    где кандидаты берутся из объединения и ответ из train достижим"""
     part = train[train["split"] == split]
     if eligible_only:
         part = part[part["eligible"]]

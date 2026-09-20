@@ -1,6 +1,5 @@
 import re
 from pathlib import Path
-
 import joblib
 import numpy as np
 import pandas as pd
@@ -8,7 +7,6 @@ import time
 from pymorphy3 import MorphAnalyzer
 from sklearn.feature_extraction.text import CountVectorizer
 from scipy import sparse
-
 from app.domain.services.popularity_generator_service import PopularityGeneratorService
 from app.infrastucture.config import BENCHMARK_I_FILE, TRAIN_FILE
 from app.infrastucture.loading import load_bench_items, load_train
@@ -32,12 +30,15 @@ class Lemmatizer:
         return lemmas
 
 class BM25GeneratorService:
-    def __init__(self, k1: float= 1.5, b: float = 0.75, popularity_service: PopularityGeneratorService = None):
+    def __init__(
+            self,
+            k1: float= 1.5,
+            b: float = 0.75,
+            popularity_service: PopularityGeneratorService = None):
         self.k1 = k1  # насколько быстро насыщается вклад повторов слова
         self.b = b  # сила нормализации по длине документа (0 — выключена)
         self.popularity_service = popularity_service
         self.lemmatizer = Lemmatizer()
-
         self.vocab = None  # term -> номер колонки
         self.weights = None  # CSC-матрица (n_docs x n_terms) с предпосчитанными весами
         self.ids = None  # np.array item_id, порядок = строки матрицы
@@ -57,14 +58,7 @@ class BM25GeneratorService:
         df = np.bincount(counts.indices, minlength=n_terms)
         idf = np.log(1 + (n_docs - df + 0.5) / (df + 0.5))
 
-        # --- предподсчёт весов ---
-        # Ключевая идея: в формуле BM25
-        #   score(D,Q) = Σ_t  idf[t] · tf·(k1+1) / (tf + k1·(1 - b + b·dl/avgdl))
-        # всё, кроме самого факта «терм t есть в запросе», зависит только от пары (документ, терм).
-        # Значит это можно посчитать заранее, а скоринг запроса свести к сложению колонок.
-
-        # Для каждого ненулевого элемента матрицы нужно знать, в какой он строке.
-        # В CSR это восстанавливается из indptr: строка i занимает indptr[i]:indptr[i+1].
+        # предподсчёт весов
         rows = np.repeat(np.arange(n_docs), np.diff(counts.indptr))
         cols = counts.indices
         tf = counts.data.astype(np.float32)
@@ -109,12 +103,11 @@ class BM25GeneratorService:
         if pool_rows.size == 0:
             return self.popularity_service.generate_popularity_ranking(pool, top_k), {}
 
-        # argpartition находит top_k без полной сортировки — O(n) вместо O(n log n).
         if pool_scores.size > top_k:
             part = np.argpartition(-pool_scores, top_k)[:top_k]
         else:
             part = np.arange(pool_scores.size)
-
+        # argpartition находит top_k без полной сортировки — O(n) вместо O(n log n).
         # Внутри отобранных - сортировка
         order = part[np.argsort(-pool_scores[part])]
         ids = [self.ids[r] for r in pool_rows[order]]

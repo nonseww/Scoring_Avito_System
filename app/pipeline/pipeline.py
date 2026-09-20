@@ -17,6 +17,8 @@ import numpy as np
 
 
 def recall_no_cutoff(predictions: dict, gold: dict) -> float:
+    """Получить предсказания без обрезки в 50 кандидатов
+    (нужно для оценки потолка)"""
     query_recalls = []
     for qid, relevant in gold.items():
         pred_set = set(predictions.get(qid, []))
@@ -46,7 +48,7 @@ class Pipeline:
         items = load_bench_items(BENCHMARK_I_FILE)
         train = load_train(TRAIN_FILE)
         self.all_items = pd.read_parquet(ALL_ITEMS_FILE)
-        self.bench_ids = set(items["item_id"])  # set, не list — иначе O(n) на проверку
+        self.bench_ids = set(items["item_id"])
 
         print(">> Разбиение train")
         train = add_qid_in_train(train)
@@ -127,6 +129,8 @@ class Pipeline:
         }
 
     def process(self):
+        """Метод, нужный для обработки validation и получения по нему данных.
+        Используется для оценки эффективности программы"""
         train = self._setup()
         val_queries, val_gold = make_eval_set(train, "val")
         gold_dict = dict(zip(val_gold["qid"], val_gold["item_ids"]))
@@ -149,7 +153,7 @@ class Pipeline:
                 row.normed_search_query, qvs_e5[i], qvs_frida[i], all_microcats[i],
                 row.search_location_id,
                 is_delivery=(row.search_is_delivery_search == 1),
-                restrict_to=self.bench_ids,  # val оценивается на корпусе бенчмарка
+                restrict_to=self.bench_ids,
                 top_k=500,
             )
 
@@ -175,6 +179,7 @@ class Pipeline:
         print(f"\nРазмер union: медиана {np.median(sizes):.0f}, среднее {np.mean(sizes):.0f}")
 
     def predict_answer(self):
+        """Метод, предсказывающий итоговый ответ по бенчмарку"""
         self._setup()
         queries = load_bench_queries(BENCHMARK_Q_FILE)
         texts = queries["normed_search_query"].tolist()
@@ -192,7 +197,7 @@ class Pipeline:
                 row.normed_search_query, qvs_e5[i], qvs_frida[i], all_microcats[i],
                 row.search_location_id,
                 is_delivery=(row.search_is_delivery_search == 1),
-                restrict_to=self.bench_ids,  # то же, что на val — режим идентичен
+                restrict_to=self.bench_ids,
                 top_k=500,
             )
             predictions[row.query_id] = out["rankings"]["rrf"][:50]
