@@ -44,11 +44,19 @@ def split_train(train: pd.DataFrame, benchmark_ids: set,
     train.loc[train["grp"].isin(val_groups), "split"] = "val"
     return train
 
-def make_eval_set(train: pd.DataFrame, split: str):
+def make_eval_set(train: pd.DataFrame, split: str, eligible_only: bool = True):
     """Для val/rank возвращает:
     queries - одна строка на запрос
-    gold - для каждогт qid список правильных item_id"""
-    part = train[(train["split"] == split) & train["eligible"]]
+    gold - для каждого qid список правильных item_id
+
+    eligible_only=True — только запросы, чьи ответы есть в корпусе бенчмарка
+    (нужно для честной оценки: недостижимый ответ занижал бы recall).
+    eligible_only=False — все запросы сплита; для обучения реранкера,
+    где кандидаты берутся из объединения и ответ из train достижим.
+    """
+    part = train[train["split"] == split]
+    if eligible_only:
+        part = part[part["eligible"]]
 
     queries = (
         part.drop_duplicates("qid")[["qid"] + SEARCH_COLS + ["search_query"]]

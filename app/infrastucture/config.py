@@ -13,6 +13,11 @@ BENCHMARK_I_FILE = DATA_RAW / "benchmark_items.parquet"
 ITEMS_EMBEDDINGS_FILE = DATA_PROCESSED / "items_embeddings.npz"
 MICROCAT_MODEL_FILE = ROOT / "models" / "microcat_classifier.joblib"
 ANSWER_FILE = ROOT / "answers.csv"
+ALL_ITEMS_FILE = DATA_PROCESSED / "all_items.parquet"
+E5_UNION_EMBEDDINGS_FILE = DATA_PROCESSED / "e5_union_embeddings.npz"
+FRIDA_EMBEDDINGS_FILE = DATA_PROCESSED / "frida_union_embeddings.npz"
+RERANKER_MODEL_FILE = ROOT / "models" / "catboost_reranker.cbm"
+BM25_INDEX_FILE = DATA_PROCESSED / "bm25_index.joblib"
 
 SEED = 67
 

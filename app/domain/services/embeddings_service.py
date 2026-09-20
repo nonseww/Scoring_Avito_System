@@ -23,8 +23,10 @@ class EmbeddingsService:
     def embed(self, text: str, prefix: str) -> np.ndarray:
         return self.embed_batch([text], prefix=prefix)[0]
 
-    def save(self, vectors: np.ndarray, ids: list[str], path: Path) -> None:
+    def save(self, vectors, ids, path: Path, dtype=None) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
+        if dtype is not None:
+            vectors = vectors.astype(dtype)
         np.savez(path, vectors=vectors, ids=np.array(ids))
 
     def load(self, path: Path) -> tuple[np.ndarray, list[str]]:

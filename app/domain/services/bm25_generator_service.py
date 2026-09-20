@@ -78,14 +78,14 @@ class BM25GeneratorService:
 
         return self
 
-    def generate(self, query_text: str, pool: list, top_k: int = 200) -> list[str]:
+    def generate_with_scores(self, query_text: str, pool: list, top_k: int = 200) -> tuple:
         """Возвращает до top_k item_id из пула, упорядоченных по убыванию"""
         pool_rows = np.fromiter(
             (self.row_by_id[i] for i in pool if i in self.row_by_id),
             dtype=np.int64
         )
         if pool_rows.size == 0:
-            return []
+            return [], {}
 
         # Лемматизируем запрос тем эе анализатором
         lemmas = set(self.lemmatizer(query_text))
@@ -93,7 +93,7 @@ class BM25GeneratorService:
 
         if not term_ids:
             # Ничего нет - модель бессильна
-            return self.popularity_service.generate_popularity_ranking(pool, top_k)
+            return self.popularity_service.generate_popularity_ranking(pool, top_k), {}
 
         # Сумма нужных колонок = вектор скоров по всем документам корпуса.
         # Колонки разрежены, так что работы тут ровно на те документы,
@@ -107,7 +107,7 @@ class BM25GeneratorService:
         pool_scores = pool_scores[nonzero]
 
         if pool_rows.size == 0:
-            return self.popularity_service.generate_popularity_ranking(pool, top_k)
+            return self.popularity_service.generate_popularity_ranking(pool, top_k), {}
 
         # argpartition находит top_k без полной сортировки — O(n) вместо O(n log n).
         if pool_scores.size > top_k:
@@ -117,7 +117,10 @@ class BM25GeneratorService:
 
         # Внутри отобранных - сортировка
         order = part[np.argsort(-pool_scores[part])]
-        return [self.ids[r] for r in pool_rows[order]]
+        ids = [self.ids[r] for r in pool_rows[order]]
+        scores = {self.ids[r]: float(s)
+                  for r, s in zip(pool_rows[order], pool_scores[order])}
+        return ids, scores
 
     def save(self, path: Path) -> None:
         sparse.save_npz(str(path.with_suffix(".npz")), self.weights)
@@ -125,6 +128,10 @@ class BM25GeneratorService:
             {"vocab": self.vocab, "ids": self.ids, "k1": self.k1, "b": self.b},
             path
         )
+
+    def generate(self, query_vector, pool, top_k=200) -> list:
+        ids, _ = self.generate_with_scores(query_vector, pool, top_k)
+        return ids
 
     @classmethod
     def load(cls, path: Path, popularity_service=None):

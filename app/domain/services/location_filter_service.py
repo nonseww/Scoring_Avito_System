@@ -43,16 +43,27 @@ class LocationFilterService:
 
         return self.loc_centers.index[indices].tolist()
 
-    def get_pool(self, location_id: str, is_delivery: bool, min_size: int = 300) -> list:
+    def get_pool(self, location_id: str, is_delivery: bool, restrict_to=None, min_size: int = 300) -> list:
         if is_delivery:
-            return self.all_item_ids
+            pool = self.all_item_ids
+            if restrict_to is not None:
+                pool = [x for x in pool if x in restrict_to]
+            return pool
+
         for r in [self.radius_km, 150, 500, 2000]:
             neighbor_locs = self._get_neighbor_locs(location_id, r)
             pool = []
             for loc in neighbor_locs:
                 pool.extend(self.item_ids_by_loc.get(loc, []))
+
+            if restrict_to is not None:
+                pool = [x for x in pool if x in restrict_to]
+
             if len(pool) >= min_size:
                 return pool
+
+        if restrict_to is not None:
+            return [x for x in self.all_item_ids if x in restrict_to]
         return self.all_item_ids
 
 if __name__ == "__main__":
@@ -102,4 +113,4 @@ if __name__ == "__main__":
     # сколько из них с доставкой?
     delivery_share = queries.loc[no_coords_mask, "search_is_delivery_search"].mean()
     print(f"Доля с доставкой: {delivery_share:.1%}")
-    print(f"Проблемные без доставки: {(no_coords_mask & (queries["search_is_delivery_search"] == 0)).sum()}")
+    print(f"Проблемные без доставки: {(no_coords_mask & (queries['search_is_delivery_search'] == 0)).sum()}")

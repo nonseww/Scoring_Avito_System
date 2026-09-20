@@ -49,6 +49,26 @@ class MicrocatGeneratorService:
         top_idx = np.argsort(proba, axis=1)[:, -self.top_k_classes:][:, ::-1]
         return self.classifier.classes_[top_idx]
 
+    def predict_microcats_with_proba(self, queries: list, keep_top: int = 20):
+        """Возвращает (топ-k классов, [{класс: вероятность}, ...]).
+
+        keep_top ограничивает словарь вероятностей верхними классами —
+        хранить все 212 для десятков тысяч запросов слишком дорого,
+        а хвост с вероятностями ~1e-4 для признака неотличим от нуля.
+        """
+        X = self.vectorizer.transform(queries)
+        proba = self.classifier.predict_proba(X)
+
+        order = np.argsort(proba, axis=1)
+        classes = self.classifier.classes_[order[:, -self.top_k_classes:][:, ::-1]]
+
+        keep = order[:, -keep_top:]
+        probas = [
+            dict(zip(self.classifier.classes_[row_keep], row[row_keep]))
+            for row, row_keep in zip(proba, keep)
+        ]
+        return classes, probas
+
     def generate(self, query_text: str, pool: list, top_k: int = 200, microcats=None):
         """если передам microcats, модель не вызывается повторно. Нужно для
         пакетного прогона"""
