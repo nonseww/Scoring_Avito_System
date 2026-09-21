@@ -1,0 +1,15 @@
+catboost==1.2.10
+fastparquet==2026.5.0
+huggingface_hub==1.32.0
+joblib==1.6.0
+numpy==2.2.6
+pandas==2.3.3
+pyarrow==25.0.1
+pymorphy3==2.0.6
+pymorphy3-dicts-ru==2.4.417150.4580142
+scikit-learn==1.7.2
+scipy==1.15.3
+sentence-transformers==6.1.0
+tokenizers==0.23.2
+tqdm==4.70.1
+transformers==5.17.0
